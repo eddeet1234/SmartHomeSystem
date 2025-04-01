@@ -1,0 +1,21 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: Add your custom styles below */
+
+.btn-primary {
+    @apply rounded-xl bg-blue-600 px-4 py-2 text-white shadow transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400;
+}
+
+.btn-secondary {
+    @apply rounded-xl bg-red-500 px-4 py-2 text-white shadow transition hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-300;
+}
+
+.btn-outline {
+    @apply rounded-xl border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800;
+}
+
+.input {
+    @apply mt-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white;
+}

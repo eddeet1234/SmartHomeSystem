@@ -1,0 +1,167 @@
+﻿@page
+@model IndexModel
+
+<div class="mx-auto max-w-3xl space-y-8 px-4 py-6 text-gray-800 dark:text-gray-100">
+	<h1 class="text-center text-3xl font-semibold">Smart Home Dashboard</h1>
+
+	<!-- ESP32 Light Control -->
+	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
+		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">ESP32 Light Control</h2>
+		<div class="flex flex-wrap justify-center gap-4">
+			<form method="post" asp-page-handler="TurnOn">
+				<button class="btn-primary">Turn Light ON</button>
+			</form>
+			<form method="post" asp-page-handler="TurnOff">
+				<button class="btn-secondary">Turn Light OFF</button>
+			</form>
+			<form method="post" asp-page-handler="ThirtyMinTimer">
+				<button class="btn-outline">30-Minute Timer</button>
+			</form>
+		</div>
+	</section>
+
+	<!-- Light Schedule -->
+	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
+		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Schedule Light</h2>
+		<form method="post" asp-page-handler="Schedule" class="space-y-4">
+			<div class="flex flex-col">
+				<label class="text-sm font-medium text-gray-600 dark:text-gray-300">On Time</label>
+				<input type="time" asp-for="OnTime" required class="input" />
+			</div>
+			<div class="flex flex-col">
+				<label class="text-sm font-medium text-gray-600 dark:text-gray-300">Off Time (optional)</label>
+				<input type="time" asp-for="OffTime" class="input" />
+			</div>
+			<button class="btn-primary w-full">Schedule</button>
+		</form>
+
+		@if (Model.LightSchedules?.Any() == true)
+		{
+			<div class="pt-4">
+				<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-100">Light Schedules</h3>
+				<ul class="divide-y divide-gray-200 dark:divide-gray-700">
+					@foreach (var schedule in Model.LightSchedules)
+					{
+						<li class="flex items-center justify-between py-2">
+							<span>
+								On at: @schedule.OnTime.ToString(@"hh\:mm")
+								@if (schedule.OffTime.HasValue)
+								{
+									<span> - Off at: @schedule.OffTime.Value.ToString(@"hh\:mm")</span>
+								}
+							</span>
+							<div class="flex flex-col space-y-2 sm:flex-row sm:justify-end sm:space-y-0 sm:space-x-2">
+								<a class="inline-flex items-center gap-1 text-blue-600 hover:underline" href="/EditLightSchedule?id=@schedule.Id">
+									<i data-lucide="pencil" class="h-4 w-4"></i>
+									<span>Edit</span>
+								</a>
+								<form method="post" asp-page-handler="DeleteSchedule" asp-route-id="@schedule.Id" class="inline">
+									<button type="submit" onclick="return confirm('Delete this schedule?')" class="inline-flex items-center gap-1 border-none bg-transparent text-red-600 hover:underline">
+										<i data-lucide="trash-2" class="h-4 w-4"></i>
+										<span>Delete</span>
+									</button>
+								</form>
+							</div>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	</section>
+
+	<!-- Ceiling Light -->
+	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
+		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Ceiling Light</h2>
+		<form method="post" asp-page-handler="ToggleCeilingLight">
+			<button class="btn-primary w-full">Toggle Ceiling Light</button>
+		</form>
+	</section>
+
+	<!-- Alarm Clock -->
+	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
+		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Alarm Clock</h2>
+		<form method="post" asp-page-handler="AddAlarm" class="space-y-4">
+			<div class="flex flex-col">
+				<label class="text-sm font-medium text-gray-600 dark:text-gray-300">Alarm Time</label>
+				<input type="datetime-local" asp-for="NewAlarmTime" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required class="input" />
+			</div>
+			<div class="flex flex-col">
+				<label class="text-sm font-medium text-gray-600 dark:text-gray-300">Label</label>
+				<input type="text" asp-for="NewAlarmLabel" required class="input" />
+			</div>
+			<div class="flex items-center gap-2">
+				<input type="checkbox" asp-for="NewAlarmRepeat" class="rounded border-gray-300 dark:border-gray-600" />
+				<label class="text-sm font-medium text-gray-600 dark:text-gray-300">Repeat Daily</label>
+			</div>
+			<button class="btn-primary w-full">Set Alarm</button>
+		</form>
+
+		@if (Model.Alarms?.Any() == true)
+		{
+			<div class="pt-4">
+				<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-100">Upcoming Alarms</h3>
+				<ul class="divide-y divide-gray-200 dark:divide-gray-700">
+					@foreach (var alarm in Model.Alarms)
+					{
+						<li class="flex items-center justify-between py-2">
+							<span>
+								@alarm.Time.ToLocalTime(): @alarm.Label
+								@if (alarm.RepeatDaily)
+								{
+									<span class="text-xs text-gray-500 dark:text-gray-400">(Repeats Daily)</span>
+								}
+							</span>
+							<div class="flex flex-col space-y-2 sm:flex-row sm:justify-end sm:space-y-0 sm:space-x-2">
+								<a class="inline-flex items-center gap-1 text-blue-600 hover:underline" href="/EditAlarm?id=@alarm.Id">
+									<i data-lucide="pencil" class="h-4 w-4"></i>
+									<span>Edit</span>
+								</a>
+								<form method="post" asp-page-handler="DeleteAlarm" asp-route-id="@alarm.Id" class="inline">
+									<button type="submit" onclick="return confirm('Delete this alarm?')" class="inline-flex items-center gap-1 border-none bg-transparent text-red-600 hover:underline">
+										<i data-lucide="trash-2" class="h-4 w-4"></i>
+										<span>Delete</span>
+									</button>
+								</form>
+							</div>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	</section>
+
+	<!-- Stop Alarm Button -->
+	<div id="stopAlarmContainer" class="hidden rounded-xl bg-red-100 p-4 text-center shadow-md dark:bg-red-900">
+		<form method="post" asp-page-handler="StopAlarm">
+			<button class="btn-secondary flex w-full items-center justify-center gap-2">
+				<i data-lucide="alarm-clock" class="h-5 w-5"></i>
+				Stop Alarm (<span id="alarmDuration">0</span>s)
+			</button>
+		</form>
+	</div>
+</div>
+<a asp-page="/Index" asp-page-handler="Signin">Sign in with Google</a>
+@section Scripts {
+	<script>
+		async function checkAlarmStatus() {
+			const response = await fetch('/Index?handler=AlarmStatus');
+			const isPlaying = await response.json();
+			const container = document.getElementById('stopAlarmContainer');
+			container.style.display = isPlaying ? 'block' : 'none';
+			
+			if (isPlaying) {
+				const durationResponse = await fetch('/Index?handler=AlarmDuration');
+				const duration = await durationResponse.json();
+				document.getElementById('alarmDuration').textContent = duration;
+			}
+			
+			lucide.createIcons(); // refresh icons
+		}
+
+		checkAlarmStatus();
+		// Check more frequently to update the duration counter
+		setInterval(checkAlarmStatus, 1000);
+
+		lucide.createIcons(); // initial icon render
+	</script>
+}

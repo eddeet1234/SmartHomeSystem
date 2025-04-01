@@ -1,0 +1,36 @@
+﻿@page
+@model EditAlarmModel
+
+<div class="mx-auto mt-10 max-w-xl space-y-6 rounded-2xl bg-white p-6 text-gray-800 shadow-md dark:bg-gray-900 dark:text-gray-100">
+	<h2 class="text-center text-2xl font-semibold">Edit Alarm</h2>
+
+	<form method="post" class="space-y-4">
+		<input type="hidden" asp-for="Alarm.Id" />
+
+		<div>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alarm Time</label>
+			<input type="datetime-local" asp-for="Alarm.Time" required class="input w-full" />
+		</div>
+
+		<div>
+			<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Label</label>
+			<input type="text" asp-for="Alarm.Label" required class="input w-full" />
+		</div>
+
+		<div class="flex items-center gap-2">
+			<input type="checkbox" asp-for="Alarm.RepeatDaily" class="rounded border-gray-300 dark:border-gray-600" />
+			<label class="text-sm font-medium text-gray-700 dark:text-gray-300">Repeat Daily</label>
+		</div>
+
+		<div class="flex items-center justify-between pt-4">
+			<button type="submit" class="btn-primary inline-flex items-center gap-1">
+				<i data-lucide="save" class="h-4 w-4"></i>
+				<span>Save Changes</span>
+			</button>
+			<a href="/" class="btn-outline inline-flex items-center gap-1">
+				<i data-lucide="x" class="h-4 w-4"></i>
+				<span>Cancel</span>
+			</a>
+		</div>
+	</form>
+</div>
