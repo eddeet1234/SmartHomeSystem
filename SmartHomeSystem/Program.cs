@@ -17,6 +17,7 @@ builder.Services.AddScoped<AlarmService>();
 builder.Services.AddHostedService<AlarmWorker>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSingleton<TextToSpeechService>();
 
 if (!builder.Environment.IsDevelopment())
 {

@@ -1,6 +1,31 @@
 ﻿@page
 @model IndexModel
 
+
+@if (Model.UserEmail == "Not signed in")
+{
+	<a asp-page="/Index" asp-page-handler="Signin" class="btn-primary absolute right-20 top-2 inline-flex h-7 items-center rounded-lg px-4">
+		Sign in with Google
+	</a>
+}
+else
+{
+	<div class="group absolute right-20 top-2 flex-col justify-start">
+
+		<a class="btn-primary inline-flex h-7 items-center rounded-lg px-4">
+			@Model.UserEmail
+		</a>
+
+		<div class="group-hover:block mr-4 mt-2 hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+			<a asp-page="/Index" asp-page-handler="SignOut"
+			   class="block rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+				Sign out
+			</a>
+		</div>
+
+	</div>
+}
+
 <div class="mx-auto max-w-3xl space-y-8 px-4 py-6 text-gray-800 dark:text-gray-100">
 	<h1 class="text-center text-3xl font-semibold">Smart Home Dashboard</h1>
 
@@ -139,8 +164,70 @@
 			</button>
 		</form>
 	</div>
+
+	<!-- Google Tasks Section -->
+	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
+		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Google Tasks</h2>
+		@if (!string.IsNullOrEmpty(Model.TasksErrorMessage))
+		{
+			<div class="alert alert-danger">
+				@Model.TasksErrorMessage
+			</div>
+		}
+		@if (Model.TasksByList?.Count == 0)
+		{
+			<p class="text-gray-600 dark:text-gray-400">No tasks lists were found or not signed in.</p>
+		}
+		else
+		{
+
+			foreach (var list in Model.TasksByList)
+			{
+				<div class="mt-4">
+					<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-100">@list.Key</h3>
+					<ul class="mt-2 space-y-2">
+						@if (list.Value.Count == 0)
+						{
+							<li class="p-3">
+								<div class="font-medium">No tasks found...</div>
+							</li>
+						}
+						else
+						{
+							@foreach (var task in list.Value)
+							{
+								<li class="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+									<div class="font-medium">@task.Title</div>
+									@if (!string.IsNullOrWhiteSpace(task.Notes))
+									{
+										<div class="mt-1 text-sm text-gray-600 dark:text-gray-400">@task.Notes</div>
+									}
+									<div class="mt-2 text-sm">
+										@*<span class="@(task.Status == "completed" ? "text-green-600" : "text-blue-600")">
+										Status: @task.Status
+									</span>*@
+										@if (task.Due != null)
+										{
+											<span class="ml-4 text-gray-600 dark:text-gray-400">
+												Due: @task.Due.Value.ToString("yyyy-MM-dd")
+											</span>
+										}
+									</div>
+								</li>
+							}
+						}
+					</ul>
+				</div>
+			}
+
+		}
+	</section>
+	<audio controls>
+		<source src="@Model.AudioUrl" type="audio/mpeg">
+		Your browser does not support the audio element.
+	</audio>
 </div>
-<a asp-page="/Index" asp-page-handler="Signin">Sign in with Google</a>
+
 @section Scripts {
 	<script>
 		async function checkAlarmStatus() {
@@ -148,13 +235,13 @@
 			const isPlaying = await response.json();
 			const container = document.getElementById('stopAlarmContainer');
 			container.style.display = isPlaying ? 'block' : 'none';
-			
+
 			if (isPlaying) {
 				const durationResponse = await fetch('/Index?handler=AlarmDuration');
 				const duration = await durationResponse.json();
 				document.getElementById('alarmDuration').textContent = duration;
 			}
-			
+
 			lucide.createIcons(); // refresh icons
 		}
 

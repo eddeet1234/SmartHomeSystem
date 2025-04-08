@@ -8,7 +8,7 @@
 	<script>
 		// Immediately invoked function to set theme before page renders
 		(function() {
-			if (localStorage.getItem('theme') === 'dark' || 
+			if (localStorage.getItem('theme') === 'dark' ||
 				(!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
 				document.documentElement.classList.add('dark');
 			}
@@ -25,16 +25,14 @@
 </head>
 <body class="min-h-screen bg-gray-100 font-sans text-gray-800 antialiased dark:tsext-gray-100 dark:bg-gray-950">
 	<button onclick="toggleDarkMode()"
-			class="absolute right-2 top-2 z-50 rounded-lg bg-gray-300 px-3 py-1 text-sm text-black shadow hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+			class="absolute right-2 top-2 z-50 rounded-xl bg-gray-300 px-3 py-1 text-sm text-black shadow hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
 		<i data-lucide="moon" class="h-5 w-5"></i>
 	</button>
 
-	<div class="mx-auto max-w-7xl p-4">
 
-		<main role="main" class="space-y-6">
-			@RenderBody()
-		</main>
-	</div>
+	<main role="main" class="space-y-6">
+		@RenderBody()
+	</main>
 
 	<!-- Scripts -->
 	<script src="~/lib/jquery/dist/jquery.min.js"></script>

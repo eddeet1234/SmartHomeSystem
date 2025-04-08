@@ -6,6 +6,9 @@ using SmartHomeSystem.Data.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 public class IndexModel : PageModel
 {
@@ -13,13 +16,16 @@ public class IndexModel : PageModel
     private readonly AppDbContext _context;
     private readonly CeilingLightService _ceilingLightService;
     private readonly AlarmService _alarmService;
+    private readonly TextToSpeechService _tts;
+    public string AudioUrl { get; private set; }
 
-    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService)
+    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts)
     {
         _lightService = lightService;
         _context = context;
         _ceilingLightService = ceilingLightService;
         _alarmService = alarmService;
+        _tts = tts;
 
         // Set default times to current time
         OnTime = DateTime.Now.TimeOfDay;
@@ -46,6 +52,9 @@ public class IndexModel : PageModel
     public List<LightSchedule> LightSchedules { get; set; }
 
     public string CurrentState { get; set; }
+    public string UserEmail { get; set; } = "Not signed in";
+    public Dictionary<string, List<GoogleTask>> TasksByList { get; set; } = new();
+    public string TasksErrorMessage { get; set; }
 
     public async Task<IActionResult> OnPostTurnOnAsync()
     {
@@ -104,7 +113,85 @@ public class IndexModel : PageModel
             .ToList();
 
         // Get light schedules
+
         LightSchedules = await _lightService.GetAllSchedulesAsync();
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            UserEmail = User.Identity.Name ?? "Signed in";
+
+            try
+            {
+                var accessToken = await HttpContext.GetTokenAsync("access_token");
+
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    TasksErrorMessage = "You are not authenticated. Please sign in to access your tasks.";
+                    return;
+                }
+
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await httpClient.GetAsync("https://tasks.googleapis.com/tasks/v1/users/@me/lists");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    TasksErrorMessage = $"Unable to fetch task lists. Status: {response.StatusCode}";
+                    return;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                using var doc = JsonDocument.Parse(json);
+                var items = doc.RootElement.GetProperty("items");
+
+                foreach (var item in items.EnumerateArray())
+                {
+                    var listTitle = item.GetProperty("title").GetString();
+                    var listId = item.GetProperty("id").GetString();
+
+                    //var taskUrl = $"https://tasks.googleapis.com/tasks/v1/lists/{listId}/tasks?showCompleted=true&showDeleted=false&showHidden=true";
+                    var taskUrl = $"https://tasks.googleapis.com/tasks/v1/lists/{listId}/tasks";
+                    var tasksResponse = await httpClient.GetAsync(taskUrl);
+
+                    if (tasksResponse.IsSuccessStatusCode)
+                    {
+                        var tasksJson = await tasksResponse.Content.ReadAsStringAsync();
+                        using var tasksDoc = JsonDocument.Parse(tasksJson);
+
+                        var tasks = new List<GoogleTask>();
+                        if (tasksDoc.RootElement.TryGetProperty("items", out var taskItems))
+                        {
+                            foreach (var taskItem in taskItems.EnumerateArray())
+                            {
+                                var task = new GoogleTask
+                                {
+                                    Title = taskItem.GetProperty("title").GetString(),
+                                    Status = taskItem.GetProperty("status").GetString()
+                                };
+
+                                if (taskItem.TryGetProperty("notes", out var notes))
+                                    task.Notes = notes.GetString();
+
+                                if (taskItem.TryGetProperty("due", out var due))
+                                    task.Due = DateTime.Parse(due.GetString());
+
+                                tasks.Add(task);
+                            }
+                        }
+                        TasksByList[listTitle] = tasks;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TasksErrorMessage = "An unexpected error occurred while fetching tasks.";
+            }
+
+        }
+        string message = "Ohh wow Mr Egbert you dance so good, much better than that Stephan fellow!";
+        AudioUrl = await _tts.SynthesizeSpeechAsync(message);
     }
 
     public IActionResult OnPostStopAlarm()
@@ -163,7 +250,16 @@ public class IndexModel : PageModel
     {
         return Challenge(new AuthenticationProperties
         {
-            RedirectUri = "/dashboard"
+            RedirectUri = "/"
         }, GoogleDefaults.AuthenticationScheme);
+    }
+
+    public IActionResult OnGetSignOut()
+    {
+        return SignOut(new AuthenticationProperties
+        {
+            RedirectUri = "/"
+        },
+        CookieAuthenticationDefaults.AuthenticationScheme);
     }
 }
