@@ -15,6 +15,11 @@ builder.Services.AddHostedService<LightScheduleWorker>();
 builder.Services.AddScoped<CeilingLightService>();
 builder.Services.AddScoped<AlarmService>();
 builder.Services.AddHostedService<AlarmWorker>();
+// Add HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<GoogleTasksService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<TextToSpeechService>();

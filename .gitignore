@@ -2,3 +2,4 @@ SmartHomeSystem/bin/
 .vs/
 SmartHomeSystem/obj/
 publish/
+SmartHomeSystem/App_Data/creds/
