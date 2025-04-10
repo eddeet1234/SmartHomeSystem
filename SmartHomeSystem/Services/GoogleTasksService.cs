@@ -103,6 +103,10 @@ namespace SmartHomeSystem.Services
                         }
                     }
                 }
+                else
+                {
+                    message += "Jokes... There are no tasks Mr. Egbert!";
+                }
             }
 
             return message;

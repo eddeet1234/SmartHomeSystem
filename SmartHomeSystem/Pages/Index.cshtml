@@ -167,7 +167,19 @@ else
 
 	<!-- Google Tasks Section -->
 	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
-		<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Google Tasks</h2>
+		<div class="flex justify-between">
+			<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Google Tasks</h2>
+			<audio id="taskAudio" class="hidden">
+				@if (!string.IsNullOrEmpty(Model.AudioUrl))
+				{
+					<source src="@Model.AudioUrl" type="audio/mpeg">
+				}
+				Your browser does not support the audio element.
+			</audio>
+			<button id="playPauseBtn" class="inline-flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 @(string.IsNullOrEmpty(Model.AudioUrl) ? "opacity-50 cursor-not-allowed" : "")" @(string.IsNullOrEmpty(Model.AudioUrl) ? "disabled" : "")>
+				<i data-lucide="play" class="h-5 w-5"></i>
+			</button>
+		</div>
 		@if (!string.IsNullOrEmpty(Model.TasksErrorMessage))
 		{
 			<div class="alert alert-danger">
@@ -222,10 +234,7 @@ else
 
 		}
 	</section>
-	<audio controls>
-		<source src="@Model.AudioUrl" type="audio/mpeg">
-		Your browser does not support the audio element.
-	</audio>
+
 </div>
 
 @section Scripts {
@@ -250,5 +259,27 @@ else
 		setInterval(checkAlarmStatus, 1000);
 
 		lucide.createIcons(); // initial icon render
+
+		const audio = document.getElementById('taskAudio');
+		const playPauseBtn = document.getElementById('playPauseBtn');
+		const playIcon = `<i data-lucide="play" class="h-5 w-5"></i>`;
+		const pauseIcon = `<i data-lucide="pause" class="h-5 w-5"></i>`;
+
+		playPauseBtn.addEventListener('click', () => {
+			if (audio.paused) {
+				audio.play();
+				playPauseBtn.innerHTML = pauseIcon;
+			} else {
+				audio.pause();
+				playPauseBtn.innerHTML = playIcon;
+			}
+			lucide.createIcons();
+		});
+
+		// Update icon when audio ends
+		audio.addEventListener('ended', () => {
+			playPauseBtn.innerHTML = playIcon;
+			lucide.createIcons();
+		});
 	</script>
 }

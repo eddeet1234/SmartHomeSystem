@@ -1,4 +1,6 @@
-﻿using Google.Cloud.TextToSpeech.V1;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Google.Cloud.TextToSpeech.V1;
 
 namespace SmartHomeSystem.Services
 {
@@ -6,7 +8,7 @@ namespace SmartHomeSystem.Services
     {
 
         private TextToSpeechClient _client;
-
+        private readonly string _audioDirectory;
         public TextToSpeechService()
         {
             // Load the credentials from the service account key JSON file
@@ -16,9 +18,14 @@ namespace SmartHomeSystem.Services
             };
 
             _client = builder.Build();
+
+            _audioDirectory = Path.Combine("wwwroot", "audio");
+
+            if (!Directory.Exists(_audioDirectory))
+                Directory.CreateDirectory(_audioDirectory);
         }
 
-        public async Task<string> SynthesizeSpeechAsync(string text, string filename = "alarm.mp3")
+        public async Task<string> SynthesizeSpeechAsync(string text)
         {
             //var response1 = await _client.ListVoicesAsync(new ListVoicesRequest { LanguageCode = "en-US" });
 
@@ -26,33 +33,41 @@ namespace SmartHomeSystem.Services
             //{
             //    Console.WriteLine($"Name: {voice1.Name}, Gender: {voice1.SsmlGender}, Natural Sample Rate: {voice1.NaturalSampleRateHertz}");
             //}
-            var input = new SynthesisInput { Text = text };
 
-            var voice = new VoiceSelectionParams
+            string filename = GetFileNameFromText(text);
+            string outputPath = Path.Combine(_audioDirectory, filename);
+
+            if (!File.Exists(outputPath))
             {
-                //Name = "en-US-Chirp3-HD-Erinome",
-                Name = "en-US-Chirp3-HD-Sulafat",
-                LanguageCode = "en-US"
-            };
+                var input = new SynthesisInput { Text = text };
 
-            var audioConfig = new AudioConfig
-            {
-                AudioEncoding = AudioEncoding.Mp3
-            };
+                var voice = new VoiceSelectionParams
+                {
+                    //Name = "en-US-Chirp3-HD-Erinome",
+                    Name = "en-US-Chirp3-HD-Sulafat",
+                    LanguageCode = "en-US"
+                };
 
-            var response = await _client.SynthesizeSpeechAsync(input, voice, audioConfig);
+                var audioConfig = new AudioConfig
+                {
+                    AudioEncoding = AudioEncoding.Mp3
+                };
 
-            var outputPath = Path.Combine("wwwroot", "audio", filename);
+                var response = await _client.SynthesizeSpeechAsync(input, voice, audioConfig);
 
-            // Ensure the audio folder exists
-            var directory = Path.GetDirectoryName(outputPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory!);
-            }
-            await File.WriteAllBytesAsync(outputPath, response.AudioContent.ToByteArray());
+              
+                await File.WriteAllBytesAsync(outputPath, response.AudioContent.ToByteArray());
+            } 
 
             return $"/audio/{filename}"; // returns relative URL for playback
+        }
+
+        private static string GetFileNameFromText(string text)
+        {
+            using var sha = SHA256.Create();
+            byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text));
+            string hash = Convert.ToHexString(hashBytes);
+            return $"{hash}.mp3";
         }
     }
 }
