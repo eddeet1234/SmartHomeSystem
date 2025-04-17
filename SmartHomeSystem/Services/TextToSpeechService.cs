@@ -27,6 +27,7 @@ namespace SmartHomeSystem.Services
 
         public async Task<string> SynthesizeSpeechAsync(string text)
         {
+            //function to list the voices
             //var response1 = await _client.ListVoicesAsync(new ListVoicesRequest { LanguageCode = "en-US" });
 
             //foreach (var voice1 in response1.Voices)
@@ -62,6 +63,7 @@ namespace SmartHomeSystem.Services
             return $"/audio/{filename}"; // returns relative URL for playback
         }
 
+        //function to get unique file name from the text
         private static string GetFileNameFromText(string text)
         {
             using var sha = SHA256.Create();

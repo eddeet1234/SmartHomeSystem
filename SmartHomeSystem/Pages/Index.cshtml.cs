@@ -18,9 +18,10 @@ public class IndexModel : PageModel
     private readonly AlarmService _alarmService;
     private readonly TextToSpeechService _tts;
     private readonly GoogleTasksService _googleTasksService;
+    private readonly HomeStateService _homeState;
     public string AudioUrl { get; private set; }
 
-    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts, GoogleTasksService googleTasksService)
+    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts, GoogleTasksService googleTasksService, HomeStateService homeState)
     {
         _lightService = lightService;
         _context = context;
@@ -28,6 +29,7 @@ public class IndexModel : PageModel
         _alarmService = alarmService;
         _tts = tts;
         _googleTasksService = googleTasksService;
+        _homeState = homeState;
         // Set default times to current time
         OnTime = DateTime.Now.TimeOfDay;
         OffTime = DateTime.Now.TimeOfDay;
@@ -47,6 +49,12 @@ public class IndexModel : PageModel
 
     [BindProperty]
     public bool NewAlarmRepeat { get; set; }
+
+    public bool IsHome 
+    { 
+        get => _homeState.IsHome;
+        set => _homeState.IsHome = value;
+    }
 
     public List<Alarm> Alarms { get; set; }
 
@@ -117,12 +125,14 @@ public class IndexModel : PageModel
         LightSchedules = await _lightService.GetAllSchedulesAsync();
 
         string message = "";
+
         if (User.Identity?.IsAuthenticated == true)
         {
             UserEmail = User.Identity.Name ?? "Signed in";
 
             try
             {
+                //Get all the user's tasks and format them for TTS
                 TasksByList = await _googleTasksService.GetAllTasksAsync();
                 message = _googleTasksService.FormatTasksForSpeech(TasksByList);
             }
@@ -136,22 +146,22 @@ public class IndexModel : PageModel
             }
         }
 
+        //Synthesize Speech
         if (!string.IsNullOrEmpty(message))
         {
             AudioUrl = await _tts.SynthesizeSpeechAsync(message);
         }
     }
 
-
     public IActionResult OnPostStopAlarm()
     {
+        //Only allow user to stop alarm after 30s
         if (_alarmService.GetAlarmPlayDuration().TotalSeconds >= 30)
         {
             _alarmService.StopAlarm();
             return RedirectToPage();
         }
 
-        // If alarm hasn't played for 30s yet, don't stop it
         return RedirectToPage();
     }
 
@@ -189,12 +199,14 @@ public class IndexModel : PageModel
         }
     }
 
+    //function to get the duration of the alarm playing 
     public JsonResult OnGetAlarmDuration()
     {
         var duration = _alarmService.GetAlarmPlayDuration();
         return new JsonResult(Math.Round(duration.TotalSeconds));
     }
 
+    //function to sign in with google
     public IActionResult OnGetSignin()
     {
         return Challenge(new AuthenticationProperties
@@ -203,6 +215,7 @@ public class IndexModel : PageModel
         }, GoogleDefaults.AuthenticationScheme);
     }
 
+    //function to sign out
     public IActionResult OnGetSignOut()
     {
         return SignOut(new AuthenticationProperties
@@ -210,5 +223,12 @@ public class IndexModel : PageModel
             RedirectUri = "/"
         },
         CookieAuthenticationDefaults.AuthenticationScheme);
+    }
+
+    //function to toggle the status
+    public IActionResult OnPostToggleStatus()
+    {
+        _homeState.IsHome = !_homeState.IsHome;
+        return RedirectToPage();
     }
 }

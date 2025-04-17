@@ -23,8 +23,6 @@ namespace SmartHomeSystem.Services
         {
             var proc = AlarmWorker.ActiveAlarmProcess;
             var isPlaying = proc != null && !proc.HasExited;
-            //var isPlaying = true;
-
 
             if (isPlaying && !_alarmStartTime.HasValue)
             {

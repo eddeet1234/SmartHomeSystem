@@ -8,6 +8,7 @@ using SmartHomeSystem.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddUserSecrets<Program>();
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddHttpClient<EspLightService>();
@@ -15,10 +16,10 @@ builder.Services.AddHostedService<LightScheduleWorker>();
 builder.Services.AddScoped<CeilingLightService>();
 builder.Services.AddScoped<AlarmService>();
 builder.Services.AddHostedService<AlarmWorker>();
-// Add HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<GoogleTasksService>();
+builder.Services.AddSingleton<HomeStateService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -60,7 +61,7 @@ builder.Services.AddAuthentication(options =>
     // Optional: set your callback path
     options.CallbackPath = "/signin-google"; // This must match your redirect URI
 
-    //// ✅ Inject prompt & access_type into the redirect URL
+    //// ✅ Inject prompt & access_type into the redirect URL (not needed for now)
     //options.Events.OnRedirectToAuthorizationEndpoint = context =>
     //{
     //    var redirectUri = context.RedirectUri;
@@ -90,7 +91,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication(); // <-- Must come before UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();

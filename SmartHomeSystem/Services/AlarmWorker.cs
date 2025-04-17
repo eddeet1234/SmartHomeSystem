@@ -2,23 +2,24 @@
 using SmartHomeSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
-
+using SmartHomeSystem.Services;
 public class AlarmWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AlarmWorker> _logger;
     public static Process? ActiveAlarmProcess { get; private set; }
-
-    public AlarmWorker(IServiceProvider serviceProvider, ILogger<AlarmWorker> logger)
+    private readonly HomeStateService _homeState;
+    public AlarmWorker(IServiceProvider serviceProvider, ILogger<AlarmWorker> logger, HomeStateService homeState)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _homeState = homeState;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
-        {
+        { 
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -30,25 +31,32 @@ public class AlarmWorker : BackgroundService
 
             foreach (var alarm in dueAlarms)
             {
-                _logger.LogInformation($"Alarm triggered: {alarm.Label}");
+                if (_homeState.IsHome)
+                {          
+                    _logger.LogInformation($"Alarm triggered: {alarm.Label}");
 
-                try
-                {
-                    var psi = new ProcessStartInfo
+                    try
                     {
-                        FileName = "mpg123",
-                        ArgumentList = { "/home/eddeet2001/alarm.mp3" },
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = "mpg123",
+                            ArgumentList = { "/home/eddeet2001/alarm.mp3" },
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
 
-                    ActiveAlarmProcess = Process.Start(psi);
+                        ActiveAlarmProcess = Process.Start(psi);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to play alarm sound");
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogError(ex, "Failed to play alarm sound");
+                    _logger.LogInformation("Not home, skipping alarm check...");
                 }
 
                 if (alarm.RepeatDaily)
@@ -60,7 +68,6 @@ public class AlarmWorker : BackgroundService
                     context.Alarms.Remove(alarm);
                 }
             }
-
             await context.SaveChangesAsync();
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
         }

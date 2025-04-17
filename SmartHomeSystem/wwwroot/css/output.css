@@ -538,6 +538,9 @@ video {
 .absolute {
   position: absolute;
 }
+.left-4 {
+  left: 1rem;
+}
 .right-2 {
   right: 0.5rem;
 }
