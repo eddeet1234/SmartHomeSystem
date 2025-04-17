@@ -50,8 +50,8 @@ public class IndexModel : PageModel
     [BindProperty]
     public bool NewAlarmRepeat { get; set; }
 
-    public bool IsHome 
-    { 
+    public bool IsHome
+    {
         get => _homeState.IsHome;
         set => _homeState.IsHome = value;
     }
@@ -129,11 +129,48 @@ public class IndexModel : PageModel
         if (User.Identity?.IsAuthenticated == true)
         {
             UserEmail = User.Identity.Name ?? "Signed in";
-
+              _homeState.UserEmail = UserEmail;  // Add this line to store the email
             try
             {
+                // 🔐 Save tokens
+                var accessToken = await HttpContext.GetTokenAsync("access_token");
+                var refreshToken = await HttpContext.GetTokenAsync("refresh_token");
+                var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");
+
+                if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(expiresAtStr))
+                {
+                    var expiresAt = DateTime.Parse(
+                        expiresAtStr,
+                        null,
+                        System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal
+                    );
+                    var existing = await _context.UserTokens.FirstOrDefaultAsync(t => t.UserEmail == UserEmail);
+
+                    if (existing != null)
+                    {
+                        existing.AccessToken = accessToken!;
+                        existing.ExpiresAt = expiresAt;
+                        if (!string.IsNullOrEmpty(refreshToken))
+                        {
+                            existing.RefreshToken = refreshToken!;
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(refreshToken)) // Refresh token is only sent once
+                    {
+                        _context.UserTokens.Add(new UserToken
+                        {
+                            UserEmail = UserEmail,
+                            AccessToken = accessToken!,
+                            RefreshToken = refreshToken!,
+                            ExpiresAt = expiresAt
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
                 //Get all the user's tasks and format them for TTS
-                TasksByList = await _googleTasksService.GetAllTasksAsync();
+                TasksByList = await _googleTasksService.GetAllTasksAsync(_homeState.UserEmail);
                 message = _googleTasksService.FormatTasksForSpeech(TasksByList);
             }
             catch (UnauthorizedAccessException)

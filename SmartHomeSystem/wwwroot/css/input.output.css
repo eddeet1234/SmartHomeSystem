@@ -592,12 +592,12 @@ video {
   position: static;
 }
 
-.fixed {
-  position: fixed;
-}
-
 .absolute {
   position: absolute;
+}
+
+.left-4 {
+  left: 1rem;
 }
 
 .right-2 {
@@ -610,10 +610,6 @@ video {
 
 .top-2 {
   top: 0.5rem;
-}
-
-.left-4 {
-  left: 1rem;
 }
 
 .z-50 {

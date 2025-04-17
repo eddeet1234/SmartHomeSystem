@@ -12,5 +12,7 @@ namespace SmartHomeSystem.Data
 
         public DbSet<Alarm> Alarms { get; set; }
         public DbSet<LightSchedule> LightSchedules { get; set; }
+
+        public DbSet<UserToken> UserTokens { get; set; } = null!;
     }
 }

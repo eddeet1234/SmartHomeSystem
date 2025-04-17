@@ -1,7 +1,7 @@
 ﻿@page
 @model IndexModel
 
-<div class="absolute left-4 right-20 top-2 flex items-center justify-between">
+<div class="absolute left-4 right-20 top-2 flex justify-between">
 	<form method="post" asp-page-handler="ToggleStatus">
 		<button type="submit" class="@(Model.IsHome ? "btn-primary" : "btn-secondary") inline-flex h-7 items-center rounded-lg px-4">
 			@(Model.IsHome ? "Home" : "Away")

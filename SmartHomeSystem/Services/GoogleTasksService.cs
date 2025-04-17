@@ -1,35 +1,70 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using SmartHomeSystem.Data;
+using SmartHomeSystem.Data.Model;
 
 namespace SmartHomeSystem.Services
 {
     public class GoogleTasksService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly HttpClient _httpClient;
+        private readonly AppDbContext _db;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _config;
 
-        public GoogleTasksService(IHttpContextAccessor httpContextAccessor, HttpClient httpClient)
+        public GoogleTasksService(AppDbContext db, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
-            _httpContextAccessor = httpContextAccessor;
-            _httpClient = httpClient;
+            _db = db;
+            _httpClientFactory = httpClientFactory;
+            _config = config;
         }
 
-        public async Task<Dictionary<string, List<GoogleTask>>> GetAllTasksAsync()
+        public async Task<string> GetValidAccessTokenAsync(UserToken token)
         {
-            var tasksByList = new Dictionary<string, List<GoogleTask>>();
-            var accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
+            if (token.ExpiresAt > DateTime.UtcNow.AddMinutes(1))
+                return token.AccessToken;
 
-            if (string.IsNullOrEmpty(accessToken))
+            var client = _httpClientFactory.CreateClient();
+            var dict = new Dictionary<string, string>
             {
+                ["client_id"] = _config["Authentication:Google:ClientId"],
+                ["client_secret"] = _config["Authentication:Google:ClientSecret"],
+                ["grant_type"] = "refresh_token",
+                ["refresh_token"] = token.RefreshToken
+            };
+
+            var response = await client.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(dict));
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var obj = JsonDocument.Parse(json).RootElement;
+
+            var newAccessToken = obj.GetProperty("access_token").GetString()!;
+            var expiresIn = obj.GetProperty("expires_in").GetInt32();
+
+            token.AccessToken = newAccessToken;
+            token.ExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn);
+            await _db.SaveChangesAsync();
+
+            return newAccessToken;
+        }
+
+
+        public async Task<Dictionary<string, List<GoogleTask>>> GetAllTasksAsync(string userEmail)
+        {
+            var token = await _db.UserTokens.FirstOrDefaultAsync(t => t.UserEmail == userEmail); // Or filter by user if needed
+            if (token == null)
                 throw new UnauthorizedAccessException("No access token available");
-            }
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var accessToken = await GetValidAccessTokenAsync(token);
 
-            // Get all task lists
-            var response = await _httpClient.GetAsync("https://tasks.googleapis.com/tasks/v1/users/@me/lists");
+            var tasksByList = new Dictionary<string, List<GoogleTask>>();
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            // Get task lists
+            var response = await client.GetAsync("https://tasks.googleapis.com/tasks/v1/users/@me/lists");
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
@@ -42,7 +77,7 @@ namespace SmartHomeSystem.Services
                 var listId = item.GetProperty("id").GetString();
 
                 var taskUrl = $"https://tasks.googleapis.com/tasks/v1/lists/{listId}/tasks";
-                var tasksResponse = await _httpClient.GetAsync(taskUrl);
+                var tasksResponse = await client.GetAsync(taskUrl);
                 tasksResponse.EnsureSuccessStatusCode();
 
                 var tasksJson = await tasksResponse.Content.ReadAsStringAsync();
@@ -73,6 +108,7 @@ namespace SmartHomeSystem.Services
 
             return tasksByList;
         }
+
 
         public string FormatTasksForSpeech(Dictionary<string, List<GoogleTask>> tasksByList)
         {

@@ -62,14 +62,14 @@ builder.Services.AddAuthentication(options =>
     // Optional: set your callback path
     options.CallbackPath = "/signin-google"; // This must match your redirect URI
 
-    //// ✅ Inject prompt & access_type into the redirect URL (not needed for now)
-    //options.Events.OnRedirectToAuthorizationEndpoint = context =>
-    //{
-    //    var redirectUri = context.RedirectUri;
-    //    redirectUri += "&access_type=offline&prompt=consent";
-    //    context.Response.Redirect(redirectUri);
-    //    return Task.CompletedTask;
-    //};
+ 
+    options.Events.OnRedirectToAuthorizationEndpoint = context =>
+    {
+        var redirectUri = context.RedirectUri;
+        redirectUri += "&access_type=offline&prompt=consent";
+        context.Response.Redirect(redirectUri);
+        return Task.CompletedTask;
+    };
 });
 var app = builder.Build();
 
