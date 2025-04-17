@@ -20,6 +20,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<GoogleTasksService>();
 builder.Services.AddSingleton<HomeStateService>();
+builder.Services.AddHostedService<TaskAnnouncementWorker>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
