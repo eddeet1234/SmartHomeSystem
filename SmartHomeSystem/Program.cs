@@ -21,6 +21,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<GoogleTasksService>();
 builder.Services.AddSingleton<HomeStateService>();
 builder.Services.AddHostedService<TaskAnnouncementWorker>();
+builder.Services.AddScoped<GoogleCalendarService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -55,6 +56,9 @@ builder.Services.AddAuthentication(options =>
 
     // Ask for access to Google Tasks
     options.Scope.Add("https://www.googleapis.com/auth/tasks");
+
+    // Ask for access to Google Calander
+    options.Scope.Add("https://www.googleapis.com/auth/calendar.readonly");
 
     // Save access token for later use
     options.SaveTokens = true;

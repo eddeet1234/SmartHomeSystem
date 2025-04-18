@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Newtonsoft.Json.Linq;
 
 public class IndexModel : PageModel
 {
@@ -19,9 +20,10 @@ public class IndexModel : PageModel
     private readonly TextToSpeechService _tts;
     private readonly GoogleTasksService _googleTasksService;
     private readonly HomeStateService _homeState;
-    public string AudioUrl { get; private set; }
-
-    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts, GoogleTasksService googleTasksService, HomeStateService homeState)
+    GoogleCalendarService _calendarService;
+    public string AudioUrlTasks { get; private set; }
+    public string AudioUrlCalendar { get; private set; }
+    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts, GoogleTasksService googleTasksService, HomeStateService homeState, GoogleCalendarService calendarService)
     {
         _lightService = lightService;
         _context = context;
@@ -30,6 +32,8 @@ public class IndexModel : PageModel
         _tts = tts;
         _googleTasksService = googleTasksService;
         _homeState = homeState;
+        _calendarService = calendarService;
+
         // Set default times to current time
         OnTime = DateTime.Now.TimeOfDay;
         OffTime = DateTime.Now.TimeOfDay;
@@ -64,6 +68,9 @@ public class IndexModel : PageModel
     public string UserEmail { get; set; } = "Not signed in";
     public Dictionary<string, List<GoogleTask>> TasksByList { get; set; } = new();
     public string TasksErrorMessage { get; set; }
+
+    public List<GoogleCalendarEvent> CalendarEvents { get; set; } = new();
+    public string CalendarErrorMessage { get; set; }
 
     public async Task<IActionResult> OnPostTurnOnAsync()
     {
@@ -124,12 +131,12 @@ public class IndexModel : PageModel
         // Get light schedules
         LightSchedules = await _lightService.GetAllSchedulesAsync();
 
-        string message = "";
-
+        string Taskmessage = "";
+        string Calendermessage = "";
         if (User.Identity?.IsAuthenticated == true)
         {
             UserEmail = User.Identity.Name ?? "Signed in";
-              _homeState.UserEmail = UserEmail;  // Add this line to store the email
+            _homeState.UserEmail = UserEmail;  // Add this line to store the email
             try
             {
                 // 🔐 Save tokens
@@ -168,10 +175,19 @@ public class IndexModel : PageModel
 
                     await _context.SaveChangesAsync();
                 }
-
+            }
+            catch (Exception ex)
+            {
+                TasksErrorMessage = "An unexpected error occurred";
+            }
+            
+            try
+            {
                 //Get all the user's tasks and format them for TTS
                 TasksByList = await _googleTasksService.GetAllTasksAsync(_homeState.UserEmail);
-                message = _googleTasksService.FormatTasksForSpeech(TasksByList);
+                Taskmessage = _googleTasksService.FormatTasksForSpeech(TasksByList);
+
+               
             }
             catch (UnauthorizedAccessException)
             {
@@ -179,14 +195,35 @@ public class IndexModel : PageModel
             }
             catch (Exception ex)
             {
-                TasksErrorMessage = "An unexpected error occurred while fetching tasks.";
+                TasksErrorMessage = "An unexpected error occurred while getting tasks";
+            }
+
+            try
+            {
+                //Get all the user's events and format them for TTS
+                CalendarEvents = await _calendarService.GetUpcomingEventsAsync(_homeState.UserEmail);
+                Calendermessage = _calendarService.FormatEventsForSpeech(CalendarEvents);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CalendarErrorMessage = "You are not authenticated. Please sign in to access your calendar.";
+            }
+            catch (Exception ex)
+            {
+                CalendarErrorMessage = "An unexpected error occurred while getting calendar events";
             }
         }
 
-        //Synthesize Speech
-        if (!string.IsNullOrEmpty(message))
+        //Synthesize Speech for Tasks
+        if (!string.IsNullOrEmpty(Taskmessage))
         {
-            AudioUrl = await _tts.SynthesizeSpeechAsync(message);
+            AudioUrlTasks = await _tts.SynthesizeSpeechAsync(Taskmessage);
+        }
+
+        //Synthesize Speech for Calanders
+        if (!string.IsNullOrEmpty(Calendermessage))
+        {
+            AudioUrlCalendar = await _tts.SynthesizeSpeechAsync(Calendermessage);
         }
     }
 
