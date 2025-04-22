@@ -4,3 +4,4 @@ SmartHomeSystem/obj/
 publish/
 SmartHomeSystem/App_Data/creds/
 SmartHomeSystem/appsettings.Production.json
+SmartHomeSystem/wwwwroot/audio/
