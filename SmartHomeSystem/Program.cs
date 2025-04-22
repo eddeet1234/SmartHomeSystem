@@ -7,7 +7,9 @@ using SmartHomeSystem.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddUserSecrets<Program>();
+//only load secrets when developing
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddUserSecrets<Program>();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -43,6 +45,7 @@ if (!builder.Environment.IsDevelopment())
 // Read Google auth config
 var googleAuthSection = builder.Configuration.GetSection("Authentication:Google");
 
+Console.WriteLine($"ASP.NET Core Environment: {builder.Environment.EnvironmentName}");
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;

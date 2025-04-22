@@ -61,7 +61,7 @@ public class AlarmWorker : BackgroundService
 
                 if (alarm.RepeatDaily)
                 {
-                    alarm.Time = alarm.Time.AddDays(1);
+                    alarm.Time = DateTime.UtcNow.Date.Add(alarm.Time.TimeOfDay).AddDays(1); //Fixes issue where alarm goes off continously if device was off for a while
                 }
                 else
                 {
