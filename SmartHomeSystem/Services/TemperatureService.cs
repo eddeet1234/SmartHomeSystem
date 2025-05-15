@@ -33,14 +33,14 @@ namespace SmartHomeSystem.Services
                     throw new InvalidOperationException("ESP32 temperature URL not configured");
                 }
 
-                //var response = await _httpClient.GetStringAsync(esp32Url);
-                //var temperatureData = JsonSerializer.Deserialize<TemperatureResponse>(response);
-                var temperatureData = new TemperatureResponse { Temperature = 25.0 }; // test value
+                var response = await _httpClient.GetStringAsync(esp32Url);
+                var temperatureData = JsonSerializer.Deserialize<TemperatureResponse>(response);
+                //var temperatureData = new TemperatureResponse { Temperature = 25.0 }; // test value
                 if (temperatureData != null)
                 {
                     var temperature = new Temperature
                     {
-                        Value = temperatureData.Temperature,
+                        Value = temperatureData.temperature,
                         Timestamp = DateTime.UtcNow
                     };
 
@@ -71,7 +71,7 @@ namespace SmartHomeSystem.Services
 
         private class TemperatureResponse
         {
-            public double Temperature { get; set; }
+            public double temperature { get; set; }
         }
     }
 } 

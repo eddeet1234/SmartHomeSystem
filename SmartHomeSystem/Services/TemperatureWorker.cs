@@ -27,19 +27,25 @@ namespace SmartHomeSystem.Services
             {
                 try
                 {
+                    // Calculate the next 10-minute interval
+                    var now = DateTime.UtcNow;
+                    var nextInterval = now.AddMinutes(10 - (now.Minute % 10));
+                    var delay = nextInterval - now;
+
+                    // Wait until the next 10-minute interval
+                    await Task.Delay(delay, stoppingToken);
+
                     using (var scope = _scopeFactory.CreateScope())
                     {
                         var temperatureService = scope.ServiceProvider.GetRequiredService<TemperatureService>();
                         await temperatureService.FetchAndStoreTemperatureAsync();
                     }
-                    _logger.LogInformation("Temperature data fetched and stored successfully");
+                    _logger.LogInformation("Temperature data fetched and stored successfully at {time}", DateTime.UtcNow);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error occurred while fetching temperature data");
                 }
-
-                await Task.Delay(_interval, stoppingToken);
             }
         }
     }
