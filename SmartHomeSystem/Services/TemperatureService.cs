@@ -57,16 +57,32 @@ namespace SmartHomeSystem.Services
 
         public async Task<Temperature?> GetLatestTemperatureAsync()
         {
-            return await _dbContext.Temperatures
+            var temperature = await _dbContext.Temperatures
                 .OrderByDescending(t => t.Timestamp)
                 .FirstOrDefaultAsync();
+            
+            if (temperature != null)
+            {
+                temperature.Timestamp = temperature.Timestamp.ToLocalTime();
+            }
+            
+            return temperature;
         }
 
-        public async Task<IQueryable<Temperature>> GetTemperatureHistoryAsync(int hours = 24)
+        public async Task<List<Temperature>> GetTemperatureHistoryAsync(int hours = 24)
         {
-            return _dbContext.Temperatures
+            var temperatures = await _dbContext.Temperatures
                 .Where(t => t.Timestamp >= DateTime.UtcNow.AddHours(-hours))
-                .OrderBy(t => t.Timestamp);
+                .OrderBy(t => t.Timestamp)
+                .ToListAsync();
+            
+            // Convert all timestamps to local time
+            foreach (var temp in temperatures)
+            {
+                temp.Timestamp = temp.Timestamp.ToLocalTime();
+            }
+            
+            return temperatures;
         }
 
         private class TemperatureResponse

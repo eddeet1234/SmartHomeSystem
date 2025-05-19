@@ -88,7 +88,7 @@ public class IndexModel : PageModel
     public string CalendarErrorMessage { get; set; }
 
     public Temperature? LatestTemperature { get; private set; }
-    public IQueryable<Temperature>? TemperatureHistory { get; private set; }
+    public List<Temperature>? TemperatureHistory { get; private set; }
 
     public async Task<IActionResult> OnPostTurnOnAsync()
     {

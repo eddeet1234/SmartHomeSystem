@@ -3,6 +3,7 @@ using SmartHomeSystem.Services;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using SmartHomeSystem.Data.Model;
 
 namespace SmartHomeSystem.Pages
 {
@@ -15,12 +16,11 @@ namespace SmartHomeSystem.Pages
             _temperatureService = temperatureService;
         }
 
-        public List<SmartHomeSystem.Data.Model.Temperature> Temperatures { get; set; }
+        public List<Temperature> Temperatures { get; set; }
 
         public async Task OnGetAsync()
         {
-            var query = await _temperatureService.GetTemperatureHistoryAsync();
-            Temperatures = await query.ToListAsync();
+            Temperatures = await _temperatureService.GetTemperatureHistoryAsync();
         }
     }
 }
