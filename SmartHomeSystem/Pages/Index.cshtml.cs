@@ -10,6 +10,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Newtonsoft.Json.Linq;
+using System.Linq;
+using System.Threading.Tasks;
 
 public class IndexModel : PageModel
 {
@@ -20,10 +22,22 @@ public class IndexModel : PageModel
     private readonly TextToSpeechService _tts;
     private readonly GoogleTasksService _googleTasksService;
     private readonly HomeStateService _homeState;
-    GoogleCalendarService _calendarService;
+    private readonly GoogleCalendarService _calendarService;
+    private readonly TemperatureService _temperatureService;
+
     public string AudioUrlTasks { get; private set; }
     public string AudioUrlCalendar { get; private set; }
-    public IndexModel(EspLightService lightService, AppDbContext context, CeilingLightService ceilingLightService, AlarmService alarmService, TextToSpeechService tts, GoogleTasksService googleTasksService, HomeStateService homeState, GoogleCalendarService calendarService)
+
+    public IndexModel(
+        EspLightService lightService, 
+        AppDbContext context, 
+        CeilingLightService ceilingLightService, 
+        AlarmService alarmService, 
+        TextToSpeechService tts, 
+        GoogleTasksService googleTasksService, 
+        HomeStateService homeState, 
+        GoogleCalendarService calendarService,
+        TemperatureService temperatureService)
     {
         _lightService = lightService;
         _context = context;
@@ -33,6 +47,7 @@ public class IndexModel : PageModel
         _googleTasksService = googleTasksService;
         _homeState = homeState;
         _calendarService = calendarService;
+        _temperatureService = temperatureService;
 
         // Set default times to current time
         OnTime = DateTime.Now.TimeOfDay;
@@ -71,6 +86,9 @@ public class IndexModel : PageModel
 
     public List<GoogleCalendarEvent> CalendarEvents { get; set; } = new();
     public string CalendarErrorMessage { get; set; }
+
+    public Temperature? LatestTemperature { get; private set; }
+    public List<Temperature>? TemperatureHistory { get; private set; }
 
     public async Task<IActionResult> OnPostTurnOnAsync()
     {
@@ -122,6 +140,10 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
+        // Get temperature data
+        LatestTemperature = await _temperatureService.GetLatestTemperatureAsync();
+        TemperatureHistory = await _temperatureService.GetTemperatureHistoryAsync();
+
         // Get alarms
         Alarms = _alarmService.GetAllAlarms()
             .Where(a => a.Time > DateTime.UtcNow)

@@ -25,6 +25,11 @@ builder.Services.AddSingleton<HomeStateService>();
 builder.Services.AddHostedService<TaskAnnouncementWorker>();
 builder.Services.AddScoped<GoogleCalendarService>();
 
+// Add temperature monitoring services
+builder.Services.AddHttpClient<TemperatureService>();
+builder.Services.AddScoped<TemperatureService>();
+builder.Services.AddHostedService<TemperatureWorker>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<TextToSpeechService>();
