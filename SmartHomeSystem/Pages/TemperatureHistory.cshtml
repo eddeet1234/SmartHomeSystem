@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model SmartHomeSystem.Pages.TemperatureHistoryModel
 @{
 	ViewData["Title"] = "Temperature History";
@@ -19,11 +19,11 @@
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script>
 		const temperatures =@Html.Raw(Json.Serialize(Model.Temperatures.Select(t => new
-		{
+			{
 				value = t.Value,
 				timestamp = t.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")
-		})))
-        console.log('Temperatures:', temperatures);
+			})))
+		console.log('Temperatures:', temperatures);
 
 		// Use the timestamps directly since they're already in local time
 		const timestamps = temperatures.map(item => new Date(item.timestamp).getTime());

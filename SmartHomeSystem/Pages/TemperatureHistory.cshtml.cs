@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using SmartHomeSystem.Services;
 using System.Threading.Tasks;
 using System.Linq;

@@ -9,5 +9,4 @@ public class HomeStateService
         set => _isHome = value;
     }
 
-    public string UserEmail { get; set; } = string.Empty;
 }
