@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SmartHomeSystem.Data;
 using SmartHomeSystem.Services;
 
@@ -20,10 +17,7 @@ builder.Services.AddScoped<AlarmService>();
 builder.Services.AddHostedService<AlarmWorker>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<GoogleTasksService>();
 builder.Services.AddSingleton<HomeStateService>();
-builder.Services.AddHostedService<TaskAnnouncementWorker>();
-builder.Services.AddScoped<GoogleCalendarService>();
 
 // Add temperature monitoring services
 builder.Services.AddHttpClient<TemperatureService>();
@@ -32,7 +26,6 @@ builder.Services.AddHostedService<TemperatureWorker>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddSingleton<TextToSpeechService>();
 
 if (!builder.Environment.IsDevelopment())
 {
@@ -47,42 +40,7 @@ if (!builder.Environment.IsDevelopment())
     });
 }
 
-// Read Google auth config
-var googleAuthSection = builder.Configuration.GetSection("Authentication:Google");
-
 Console.WriteLine($"ASP.NET Core Environment: {builder.Environment.EnvironmentName}");
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-})
-.AddCookie()
-.AddGoogle(options =>
-{
-    options.ClientId = googleAuthSection["ClientId"];
-    options.ClientSecret = googleAuthSection["ClientSecret"];
-
-    // Ask for access to Google Tasks
-    options.Scope.Add("https://www.googleapis.com/auth/tasks");
-
-    // Ask for access to Google Calander
-    options.Scope.Add("https://www.googleapis.com/auth/calendar.readonly");
-
-    // Save access token for later use
-    options.SaveTokens = true;
-    
-    // Optional: set your callback path
-    options.CallbackPath = "/signin-google"; // This must match your redirect URI
-
- 
-    options.Events.OnRedirectToAuthorizationEndpoint = context =>
-    {
-        var redirectUri = context.RedirectUri;
-        redirectUri += "&access_type=offline&prompt=consent";
-        context.Response.Redirect(redirectUri);
-        return Task.CompletedTask;
-    };
-});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

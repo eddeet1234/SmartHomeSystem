@@ -7,30 +7,6 @@
 			@(Model.IsHome ? "Home" : "Away")
 		</button>
 	</form>
-
-	@if (Model.UserEmail == "Not signed in")
-	{
-		<div class="flex justify-start">
-			<a asp-page="/Index" asp-page-handler="Signin" class="btn-primary inline-flex h-7 items-center rounded-lg px-4">
-				Sign in with Google
-			</a>
-		</div>
-	}
-	else
-	{
-		<div class="group flex-col justify-start">
-			<a class="btn-primary inline-flex h-7 items-center rounded-lg px-4">
-				@Model.UserEmail
-			</a>
-
-			<div class="group-hover:block mr-4 mt-2 hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
-				<a asp-page="/Index" asp-page-handler="SignOut"
-				   class="block rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-					Sign out
-				</a>
-			</div>
-		</div>
-	}
 </div>
 
 <div class="mx-auto max-w-3xl space-y-8 px-4 py-6 text-gray-800 dark:text-gray-100">
@@ -174,7 +150,7 @@
 
 	<!-- Temperature Monitoring -->
 	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
-		<div class="flex justify-between items-center">
+		<div class="flex items-center justify-between">
 			<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Temperature Monitoring</h2>
 			<a href="/TemperatureHistory" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
 				<i data-lucide="line-chart" class="h-4 w-4"></i>
@@ -209,152 +185,6 @@
 		}
 	</section>
 
-	<!-- Google Tasks Section -->
-	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
-		<div class="flex justify-between">
-			<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Google Tasks</h2>
-			<audio id="taskAudio" class="hidden">
-				@if (!string.IsNullOrEmpty(Model.AudioUrlTasks))
-				{
-					<source src="@Model.AudioUrlTasks" type="audio/mpeg">
-				}
-				Your browser does not support the audio element.
-			</audio>
-			<button id="playPauseBtn" class="inline-flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 @(string.IsNullOrEmpty(Model.AudioUrlTasks) ? "opacity-50 cursor-not-allowed" : "")" @(string.IsNullOrEmpty(Model.AudioUrlTasks) ? "disabled" : "")>
-				<i data-lucide="play" class="h-5 w-5"></i>
-			</button>
-		</div>
-		@if (!string.IsNullOrEmpty(Model.TasksErrorMessage))
-		{
-			<div class="alert alert-danger">
-				@Model.TasksErrorMessage
-			</div>
-		}
-		@if (Model.TasksByList?.Count == 0)
-		{
-			<p class="text-gray-600 dark:text-gray-400">No tasks lists were found or not signed in.</p>
-		}
-		else
-		{
-
-			foreach (var list in Model.TasksByList)
-			{
-				<div class="mt-4">
-					<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-100">@list.Key</h3>
-					<ul class="mt-2 space-y-2">
-						@if (list.Value.Count == 0)
-						{
-							<li class="p-3">
-								<div class="font-medium">No tasks found...</div>
-							</li>
-						}
-						else
-						{
-							@foreach (var task in list.Value)
-							{
-								<li class="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-									<div class="font-medium">@task.Title</div>
-									@if (!string.IsNullOrWhiteSpace(task.Notes))
-									{
-										<div class="mt-1 text-sm text-gray-600 dark:text-gray-400">@task.Notes</div>
-									}
-									<div class="mt-2 text-sm">
-										@*<span class="@(task.Status == "completed" ? "text-green-600" : "text-blue-600")">
-										Status: @task.Status
-									</span>*@
-										@if (task.Due != null)
-										{
-											<span class="ml-4 text-gray-600 dark:text-gray-400">
-												Due: @task.Due.Value.ToString("yyyy-MM-dd")
-											</span>
-										}
-									</div>
-								</li>
-							}
-						}
-					</ul>
-				</div>
-			}
-
-		}
-	</section>
-
-	<!-- Google Calendar Section -->
-	<section class="space-y-4 rounded-2xl bg-white p-6 shadow-md dark:bg-gray-900">
-		<div class="flex justify-between">
-			<h2 class="text-xl font-bold text-gray-700 dark:text-gray-100">Google Calendar</h2>
-			<audio id="calendarAudio" class="hidden">
-				@if (!string.IsNullOrEmpty(Model.AudioUrlCalendar))
-				{
-					<source src="@Model.AudioUrlCalendar" type="audio/mpeg">
-				}
-				Your browser does not support the audio element.
-			</audio>
-			<button id="playPauseCalendarBtn" class="inline-flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 @(string.IsNullOrEmpty(Model.AudioUrlCalendar) ? "opacity-50 cursor-not-allowed" : "")" @(string.IsNullOrEmpty(Model.AudioUrlCalendar) ? "disabled" : "")>
-				<i data-lucide="play" class="h-5 w-5"></i>
-			</button>
-		</div>
-		@if (!string.IsNullOrEmpty(Model.CalendarErrorMessage))
-		{
-			<div class="alert alert-danger">
-				@Model.CalendarErrorMessage
-			</div>
-		}
-		@if (Model.CalendarEvents?.Count == 0)
-		{
-			<p class="text-gray-600 dark:text-gray-400">No upcoming events found or not signed in.</p>
-		}
-		else
-		{
-			<div class="mt-4">
-				<ul class="mt-2 space-y-2">
-					@foreach (var evt in Model.CalendarEvents)
-					{
-						<li class="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-							<div class="font-medium">@evt.Title</div>
-							@if (!string.IsNullOrWhiteSpace(evt.Description))
-							{
-								<div class="mt-1 text-sm text-gray-600 dark:text-gray-400">@evt.Description</div>
-							}
-							@if (!string.IsNullOrWhiteSpace(evt.Location))
-							{
-								<div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-									<i data-lucide="map-pin" class="inline h-4 w-4"></i> @evt.Location
-								</div>
-							}
-							<div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-								@if (!evt.IsAllDay)
-								{
-									<span>
-										@evt.Start.ToLocalTime().ToString("MMM dd, yyyy HH:mm") -
-										@evt.End.ToLocalTime().ToString("HH:mm")
-									</span>
-								}
-								else
-								{
-									<span>All day: @evt.Start.ToString("MMM dd, yyyy")</span>
-								}
-								@if (evt.Status != "confirmed")
-								{
-									<span class="ml-2 rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
-										@evt.Status
-									</span>
-								}
-							</div>
-							@if (!string.IsNullOrEmpty(evt.HtmlLink))
-							{
-								<div class="mt-2">
-									<a href="@evt.HtmlLink" target="_blank" class="text-sm text-blue-600 hover:underline">
-										<i data-lucide="external-link" class="inline h-4 w-4"></i> View in Calendar
-									</a>
-								</div>
-							}
-						</li>
-					}
-				</ul>
-			</div>
-		}
-	</section>
 
 </div>
 
@@ -381,51 +211,5 @@
 		setInterval(checkAlarmStatus, 1000); // Check alarm status every second
 
 		lucide.createIcons(); // initial icon render
-
-		//function to play and pause the task audio
-		const audio = document.getElementById('taskAudio');
-		const playPauseBtn = document.getElementById('playPauseBtn');
-		const playIcon = `<i data-lucide="play" class="h-5 w-5"></i>`;
-		const pauseIcon = `<i data-lucide="pause" class="h-5 w-5"></i>`;
-
-		playPauseBtn.addEventListener('click', () => {
-			if (audio.paused) {
-				audio.play();
-				playPauseBtn.innerHTML = pauseIcon;
-			} else {
-				audio.pause();
-				playPauseBtn.innerHTML = playIcon;
-			}
-			lucide.createIcons();
-		});
-
-		// Update icon when audio ends
-		audio.addEventListener('ended', () => {
-			playPauseBtn.innerHTML = playIcon;
-			lucide.createIcons();
-		});
-
-		// Calendar audio controls
-		const calendarAudio = document.getElementById('calendarAudio');
-		const playPauseCalendarBtn = document.getElementById('playPauseCalendarBtn');
-		const calendarPlayIcon = `<i data-lucide="play" class="h-5 w-5"></i>`;
-		const calendarPauseIcon = `<i data-lucide="pause" class="h-5 w-5"></i>`;
-
-		playPauseCalendarBtn.addEventListener('click', () => {
-			if (calendarAudio.paused) {
-				calendarAudio.play();
-				playPauseCalendarBtn.innerHTML = calendarPauseIcon;
-			} else {
-				calendarAudio.pause();
-				playPauseCalendarBtn.innerHTML = calendarPlayIcon;
-			}
-			lucide.createIcons();
-		});
-
-		// Update icon when calendar audio ends
-		calendarAudio.addEventListener('ended', () => {
-			playPauseCalendarBtn.innerHTML = calendarPlayIcon;
-			lucide.createIcons();
-		});
 	</script>
 }
