@@ -35,7 +35,7 @@ if (!builder.Environment.IsDevelopment())
 
         options.ListenAnyIP(443, listenOptions =>
         {
-            listenOptions.UseHttps("/home/eddeet2001/certs/dev-cert.pfx", "Eggethor@#12345");
+            listenOptions.UseHttps("/home/eddeet2001/certs/mycert.pfx", "Eggethor@#12345");
         });
     });
 }
